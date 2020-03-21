@@ -1,0 +1,31 @@
+version: '3'
+
+services:
+  mosaic:
+    build:
+      context: .
+    container_name: 'mosaic'
+    volumes:
+      - '.:/root/mosaic'
+    working_dir: '/root/mosaic'
+    tty: true
+    networks:
+      - mosaic
+
+  mongo:
+    image: mongo:3.6.3
+    restart: always
+    container_name: mongo
+    environment:
+      - MONGO_DATA_DIR=/data/db
+      - MONGO_LOG_DIR=/dev/null
+    volumes:
+      - './mongodb:/data/db'
+    ports:
+      - '27017:27017'
+    networks:
+      - mosaic
+
+networks:
+  mosaic:
+    driver: bridge
