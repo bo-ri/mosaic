@@ -4,21 +4,45 @@ import numpy as np
 import sys
 from libs.analyzeColor import analyze
 import glob
+from libs.getNearColor import getNearImagePathFromDB
+import datetime
+from tqdm import tqdm
+
 if glob.glob('./source_images/new/*'):
   analyze()
 
 source_dir = './source_images/source'
 target_image = './target/image.jpg'
-dist_image = './dist/image.jpg'
+dist_image = './dist/'
 
+image_size = 10     # upscaleするサイズ
 target = Image.open(target_image)
-print(target)
-px = 10
+"""
+  もしも画像サイズの一の位が0ではない場合に，
+  10倍するとout of rangeでerror出るから
+  その場合にresizeしておく
+"""
+top_size, left_size = target.size
+origin_left, origin_top = target.size
+origin_left = list(str(origin_left))
+if (not origin_left[len(origin_left)-1] is 0):
+  origin_left[len(origin_left)-1] = '0'
+  left_size = int(''.join(origin_left))
+origin_top = list(str(origin_top))
+if (not origin_top[len(origin_top)-1] is 0):
+  origin_top[len(origin_top)-1] = '0'
+  top_size = int(''.join(origin_top))
+
+# 対象の画像をupscaling
+target = target.resize((top_size * image_size, left_size * image_size), Image.LANCZOS)
+
+# 平滑化するpixel数
+px = 100
 
 width, height = target.size
-dist = Image.new('RGB', target.size)
+dist = Image.new('RGB', (target.size[0], target.size[1]))
 
-for y in range(0, height, px):
+for y in tqdm(range(0, height, px)):
   for x in range(0, width, px):
     R = 0
     G = 0
@@ -32,8 +56,22 @@ for y in range(0, height, px):
     R_ave = int(R / (px * px))
     G_ave = int(G / (px * px))
     B_ave = int(B / (px * px))
-    tile = Image.new(mode='RGB', size=(px, px), color=(R_ave, G_ave, B_ave))
+    img = getNearImagePathFromDB((R_ave, G_ave, B_ave))
+    tile = Image.open('./source_images/source/' + img)
+    """
+    LANCZOS パフォーマンスは悪いがdownscalingの品質が高い
+    BICUBIC LANCZOSよりはパフォーマンスがいいが，downscalingの品質は少し落ちる
+    HAMMING 妥協点としては最低
+    BILINER 使うことはないだろう パフォーマンスはHAMMINGと変わらないがHAMMINGの方がdownscalingの品質が高い
+    BOX     NEARESTよりはdownscalingの品質は上がる
+    NEAREST defaultのfilter パフォーマンスに関してのみ最高
+    """
+    tile = tile.resize((px, px), Image.LANCZOS)
+    tile.thumbnail((px, px), Image.LANCZOS)
+    # tile = Image.new(mode='RGB', size=(px, px), color=(R_ave, G_ave, B_ave))
     dist.paste(tile, (x, y))
 
-dist.save(dist_image)
+t = datetime.datetime.now()
+name = str(datetime.datetime.timestamp(t)) + '.jpg'
+dist.save(dist_image + name)
 
