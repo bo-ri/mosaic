@@ -4,6 +4,7 @@ import glob
 import shutil
 import datetime
 import collections
+from tqdm import tqdm
 
 def analyzeColor(image):
   # 平均の計算
@@ -55,7 +56,7 @@ def analyzeColor(image):
 def analyze():
   source_dir = './../source_images/new/*'
   files = glob.glob(source_dir)
-  for filename in files:
+  for filename in tqdm(files):
     print(filename)
     image = Image.open(filename)
     # calc color average and insert data into average collection 

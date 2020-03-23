@@ -8,8 +8,17 @@ from libs.getNearColor import getNearImagePathFromDB
 import datetime
 from tqdm import tqdm
 
-if glob.glob('./source_images/new/*'):
+if len(glob.glob('./source_images/new/*')) > 0:
   analyze()
+
+"""
+average   平均値のコレクション
+center    中央値のコレクション
+frequent  最頻値のコレクション
+"""
+# method = 'average'
+# method = 'center'
+method = 'frequent'
 
 source_dir = './source_images/source'
 target_image = './target/image.jpg'
@@ -23,7 +32,7 @@ target = Image.open(target_image)
   その場合にresizeしておく
 """
 top_size, left_size = target.size
-origin_left, origin_top = target.size
+origin_top, origin_left = target.size
 origin_left = list(str(origin_left))
 if (not origin_left[len(origin_left)-1] is 0):
   origin_left[len(origin_left)-1] = '0'
@@ -56,7 +65,7 @@ for y in tqdm(range(0, height, px)):
     R_ave = int(R / (px * px))
     G_ave = int(G / (px * px))
     B_ave = int(B / (px * px))
-    img = getNearImagePathFromDB((R_ave, G_ave, B_ave))
+    img = getNearImagePathFromDB((R_ave, G_ave, B_ave), method)
     tile = Image.open('./source_images/source/' + img)
     """
     LANCZOS パフォーマンスは悪いがdownscalingの品質が高い
@@ -72,6 +81,6 @@ for y in tqdm(range(0, height, px)):
     dist.paste(tile, (x, y))
 
 t = datetime.datetime.now()
-name = str(datetime.datetime.timestamp(t)) + '.jpg'
-dist.save(dist_image + name)
+name = str(datetime.datetime.timestamp(t))
+dist.save(dist_image + name + '_' + method + '.jpg')
 
