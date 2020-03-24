@@ -5,6 +5,7 @@ import sys
 from libs.analyzeColor import analyze
 import glob
 from libs.getNearColor import getNearImagePathFromDB
+from libs.getTargetColor import calcTargetColor
 import datetime
 from tqdm import tqdm
 
@@ -16,9 +17,9 @@ average   平均値のコレクション
 center    中央値のコレクション
 frequent  最頻値のコレクション
 """
-# method = 'average'
+method = 'average'
 # method = 'center'
-method = 'frequent'
+# method = 'frequent'
 
 source_dir = './source_images/source'
 target_image = './target/image.jpg'
@@ -56,16 +57,17 @@ for y in tqdm(range(0, height, px)):
     R = 0
     G = 0
     B = 0
-    for i in range(y, y + px):
-      for j in range(x, x + px):
-        r, g, b = target.getpixel((j, i))
-        R += r
-        G += g
-        B += b
-    R_ave = int(R / (px * px))
-    G_ave = int(G / (px * px))
-    B_ave = int(B / (px * px))
-    img = getNearImagePathFromDB((R_ave, G_ave, B_ave), method)
+    # for i in range(y, y + px):
+    #   for j in range(x, x + px):
+    #     r, g, b = target.getpixel((j, i))
+    #     R += r
+    #     G += g
+    #     B += b
+    # R_ave = int(R / (px * px))
+    # G_ave = int(G / (px * px))
+    # B_ave = int(B / (px * px))
+    color = calcTargetColor(x, y, px, target, method)
+    img = getNearImagePathFromDB(color, method)
     tile = Image.open('./source_images/source/' + img)
     """
     LANCZOS パフォーマンスは悪いがdownscalingの品質が高い
