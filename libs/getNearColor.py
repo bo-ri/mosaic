@@ -5,7 +5,10 @@ def calcEuclidDist(X, Y):
   return math.sqrt(((X[0] - Y[0])*(X[0] - Y[0])) + ((X[1] - Y[1])*(X[1] - Y[1])) + ((X[2] - Y[2])*(X[2] - Y[2])))
 
 def getNearImagePathFromDB(X, col='average'):
-  r, g, b = X
+  # r, g, b = X
+  r = int(X[0])
+  g = int(X[1])
+  b = int(X[2])
   client = MongoClient('mongo', 27017)
   db = client['mosaic']
   collection = db[col]

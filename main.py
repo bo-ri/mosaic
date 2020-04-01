@@ -5,7 +5,8 @@ import sys
 from libs.analyzeColor import analyze
 import glob
 from libs.getNearColor import getNearImagePathFromDB
-from libs.getTargetColor import calcTargetColor
+# from libs.getTargetColor import calcTargetColor
+from libs.getTargetColor import calcAverage
 import datetime
 from tqdm import tqdm
 
@@ -44,29 +45,30 @@ if (not origin_top[len(origin_top)-1] is 0):
   top_size = int(''.join(origin_top))
 
 # 対象の画像をupscaling
-target = target.resize((top_size * image_size, left_size * image_size), Image.LANCZOS)
+# target = target.resize((top_size * image_size, left_size * image_size), Image.LANCZOS)
 
 # 平滑化するpixel数
-px = 100
+px = 10
 
 width, height = target.size
-dist = Image.new('RGB', (target.size[0], target.size[1]))
+dist = Image.new('RGB', (target.size[0]*image_size, target.size[1]*image_size))
 
+"""
+numbaで処理するためにPIL型のimageをnumpy配列に変換しておく
+"""
+li = np.array(target, dtype=None).tolist()
+np_array = np.array(li, dtype=None)
+
+"""
+10px * 10pxの範囲の色情報を解析する
+色相が近い画像を100px * 100pxで貼り付ける 
+"""
 for y in tqdm(range(0, height, px)):
   for x in range(0, width, px):
     R = 0
     G = 0
     B = 0
-    # for i in range(y, y + px):
-    #   for j in range(x, x + px):
-    #     r, g, b = target.getpixel((j, i))
-    #     R += r
-    #     G += g
-    #     B += b
-    # R_ave = int(R / (px * px))
-    # G_ave = int(G / (px * px))
-    # B_ave = int(B / (px * px))
-    color = calcTargetColor(x, y, px, target, method)
+    color = calcAverage(x, y, px, np_array)
     img = getNearImagePathFromDB(color, method)
     tile = Image.open('./source_images/source/' + img)
     """
@@ -77,10 +79,9 @@ for y in tqdm(range(0, height, px)):
     BOX     NEARESTよりはdownscalingの品質は上がる
     NEAREST defaultのfilter パフォーマンスに関してのみ最高
     """
-    tile = tile.resize((px, px), Image.LANCZOS)
-    tile.thumbnail((px, px), Image.LANCZOS)
-    # tile = Image.new(mode='RGB', size=(px, px), color=(R_ave, G_ave, B_ave))
-    dist.paste(tile, (x, y))
+    tile = tile.resize((px * 10, px * 10), Image.LANCZOS)
+    tile.thumbnail((px * 10, px * 10), Image.LANCZOS)
+    dist.paste(tile, (x * image_size, y * image_size))
 
 t = datetime.datetime.now()
 name = str(datetime.datetime.timestamp(t))
